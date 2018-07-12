@@ -21,10 +21,11 @@ file(GLOB SRC_FILES
   "src/*.cpp"
   "src/*.c"
 )
+find_package( OpenCV REQUIRED )
 
 set(CMAKE_CXX_STANDARD 14)
 
 
-add_executable(MD.out ${SRC_FILES})
+add_executable(a.out ${SRC_FILES})
 
-target_link_libraries(MD.out m boost_thread boost_system)
+target_link_libraries(a.out m boost_thread boost_system ${OpenCV_LIBS})
