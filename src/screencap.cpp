@@ -1,5 +1,7 @@
 #include "screencap.hpp"
 
+namespace rrec
+{
 void ImageFromWindow(std::vector<uint8_t> &pixels, int &width, int &height,
                      int &bitsPerPixel, Window window, Display *display)
 {
@@ -87,3 +89,4 @@ cv::Mat getSpecificWindow(Window window, Display *display)
 
     return screenShotMat;
 }
+} // namespace rrec

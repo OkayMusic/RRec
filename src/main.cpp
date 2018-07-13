@@ -14,12 +14,19 @@ int main()
 
   unsigned int numchildren;
 
+  // store all the children of the root window in an array of size numchildren
+  // starting at memory location children
   XQueryTree(display, rootWindow, &returnedroot, &returnedparent, &children,
              &numchildren);
 
-  cv::Mat testImage = getSpecificWindow(*(children), display);
+  // rrec::showPrintScreen();
 
-  std::cout << testImage << std::endl;
+  cv::Mat testImage = rrec::getSpecificWindow(rootWindow, display);
+
+  char *equalized_window = "Equalized Image";
+  cv::namedWindow(equalized_window, cv::WINDOW_AUTOSIZE);
+  cv::imshow(equalized_window, testImage);
+  cv::waitKey(0);
 
   return 0;
 }
