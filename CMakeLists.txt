@@ -17,15 +17,19 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 # every time a new .c, .cpp or .h file is added cmake should be run in order to
 # generate a makefile which includes the new file.
 file(GLOB SRC_FILES
+  "src/*.c"
   "src/*.h"
   "src/*.cpp"
-  "src/*.c"
+  "src/*.hpp"
 )
 find_package( OpenCV REQUIRED )
 
+find_package( X11 REQUIRED )
+
 set(CMAKE_CXX_STANDARD 14)
 
+include_directories(${X11_INCLUDE_DIR})
 
 add_executable(a.out ${SRC_FILES})
 
-target_link_libraries(a.out m boost_thread boost_system ${OpenCV_LIBS})
+target_link_libraries(a.out m boost_thread boost_system ${OpenCV_LIBS} ${X11_LIBRARIES})
