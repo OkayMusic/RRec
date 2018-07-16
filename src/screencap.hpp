@@ -11,9 +11,9 @@ namespace rrec
 void ImageFromWindow(std::vector<uint8_t> &pixels, int &width, int &height,
                      int &bitsPerPixel, Window window, Display *display);
 
-void printSpecificScreen(Window window, Display *display);
+void showPrintScreen(Window window, Display *display);
 
 void showPrintScreen();
 
-cv::Mat getSpecificWindow(Window window, Display *display);
+cv::Mat getPrintScreen(Window window, Display *display);
 } // namespace rrec

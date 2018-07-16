@@ -24,7 +24,7 @@ void ImageFromWindow(std::vector<uint8_t> &pixels, int &width, int &height,
     XCloseDisplay(display);
 }
 
-void printSpecificScreen(Window window, Display *display)
+void showPrintScreen(Window window, Display *display)
 {
     using namespace cv;
     int Width = 0;
@@ -70,7 +70,7 @@ void showPrintScreen()
     }
 }
 
-cv::Mat getSpecificWindow(Window window, Display *display)
+cv::Mat getPrintScreen(Window window, Display *display)
 {
     cv::Mat screenShotMat;
     using namespace cv;
@@ -83,8 +83,9 @@ cv::Mat getSpecificWindow(Window window, Display *display)
 
     if (Width && Height)
     {
-        screenShotMat = Mat(Height, Width, Bpp > 24 ? CV_8UC4 : CV_8UC3,
-                            &Pixels[0]);
+        Mat(Height, Width, Bpp > 24 ? CV_8UC4 : CV_8UC3,
+            &Pixels[0])
+            .copyTo(screenShotMat);
     }
 
     return screenShotMat;

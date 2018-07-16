@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 project(MolecularDynamics)
 
 # define some constant we'll use as compiler flags
-SET(COMPILER_FLAGS "-march=native -Ofast")
+SET(COMPILER_FLAGS "-march=native")
 add_definitions(${COMPILER_FLAGS})
 
 # define location for produced binaries
