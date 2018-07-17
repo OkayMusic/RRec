@@ -13,8 +13,8 @@ int main()
     return -1;
   }
 
-  cv::namedWindow("Brightness scale", CV_WINDOW_AUTOSIZE);
-  cv::namedWindow("Processed video", CV_WINDOW_AUTOSIZE);
+  cv::namedWindow("Detector", CV_WINDOW_AUTOSIZE);
+  cv::namedWindow("Original video", CV_WINDOW_AUTOSIZE);
 
   int secondsSkipped = 355;
   // skip the first secondsSkipped seconds of the movie
@@ -31,6 +31,7 @@ int main()
       std::cout << "\n Cannot read the video file. \n";
       exit(-1);
     }
+    cv::imshow("Original video", frame);
 
     // now it is time to process the frame:
     // make sure the video is grayscale
@@ -58,10 +59,9 @@ int main()
     cv::Mat localBrightness;
     cv::GaussianBlur(frame, localBrightness, cv::Size(7, 7), 0);
 
-    cv::imshow("Processed video", localBrightness);
-    cv::imshow("Brightness scale", brightnessScale);
+    cv::Mat thresh = rrec::detectSignal(localBrightness, brightnessScale);
 
-    rrec::cluster(localBrightness, brightnessScale);
+    cv::imshow("Detector", thresh);
 
     if (cv::waitKey(30) != -1) // Wait for any key press
     {
