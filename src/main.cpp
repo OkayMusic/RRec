@@ -6,8 +6,8 @@
 int main()
 {
   cv::VideoCapture cap("../video/_dvcr006.mpg");
-  // cap is the object of class video capture that tries to capture Bumpy.mp4
-  if (!cap.isOpened()) // isOpened() returns true if capturing has been initialized.
+
+  if (!cap.isOpened())
   {
     std::cout << "Cannot open the video file. \n";
     return -1;
