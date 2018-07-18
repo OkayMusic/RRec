@@ -148,21 +148,50 @@ class Cluster
   private:
     std::vector<std::vector<int>> pointCoords;
     std::string clusterType;
+    int clusterID;
 
   public:
-    void addPoint(std::vector<int> coords) { pointCoords.push_back(coords); }
     std::vector<std::vector<int>> getPointCoords() { return pointCoords; }
     std::string getClusterType() { return clusterType; }
+    int getClusterID() { return clusterID; }
+    void addPoint(std::vector<int> coords) { pointCoords.push_back(coords); }
 
     Cluster()
     {
         clusterType = "Not implemented";
+        clusterID = -1; // it is not yet a cluster <=> ID = -1
     }
 };
 
-int countNeighbours(std::vector<std::vector<bool>> thresh)
+Cluster getNeighbours(std::vector<std::vector<bool>> thresh,
+                      std::vector<std::vector<int>> *clusterFlags,
+                      int i, int j, int clusterSize)
 {
-    return 0;
+    Cluster cluster;
+
+    // where we start/stop the loop
+    int a_start = i - clusterSize / 2;
+    int a_stop = i + clusterSize / 2;
+    int b_start = j - clusterSize / 2;
+    int b_stop = j + clusterSize / 2;
+
+    // check to see if we're on the edge - if we are, prevent segfault
+    if (i < clusterSize / 2)
+        a_start = 0;
+    if (j < clusterSize / 2)
+        b_start = 0;
+    if (i > thresh.size() - clusterSize / 2 - 1)
+        a_stop = thresh.size() - 1;
+    if (j > thresh[i].size() - clusterSize / 2 - 1)
+        b_stop = thresh[i].size() - 1;
+
+    // get the truthy units in cluster
+    for (int a = a_start; a < a_stop; ++a)
+        for (int b = b_start; b < b_stop; ++b)
+            if (thresh[a][b])
+                cluster.addPoint(std::vector<int>{a, b});
+
+    return cluster;
 }
 
 std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
@@ -176,14 +205,22 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
     // order to form a cluster
     int minPts = 23;
 
+    // the return vector
+    std::vector<std::vector<int>> clusterFlags;
+
     // a vector in which all the cluster objects are stored
+    // it could be handy, for now basically unused
     std::vector<Cluster> clusters;
     for (int i = 0; i < thresh.size(); ++i)
         for (int j = 0; j < thresh[i].size(); ++j)
         {
             if (thresh[i][j])
             {
-                int counter = 0;
+                Cluster cluster = getNeighbours(thresh, &clusterFlags, i, j,
+                                                clusterSize);
+
+                if (cluster.getPointCoords().size() > 23)
+                    clusters.push_back(cluster);
             }
         }
 }

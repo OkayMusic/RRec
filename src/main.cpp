@@ -31,8 +31,8 @@ int main()
       std::cout << "\n Cannot read the video file. \n";
       exit(-1);
     }
-    cv::imshow("Original video", frame);
 
+    cv::imshow("Original video", frame);
     // now it is time to process the frame:
     // make sure the video is grayscale
     cv::cvtColor(frame, frame, CV_BGR2GRAY);
