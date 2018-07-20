@@ -63,7 +63,13 @@ int main()
 
     cv::imshow("Detector", thresh);
 
-    if (cv::waitKey(30) != -1) // Wait for any key press
+    if (cv::waitKey(30) != -1) // wait for any key press
+    {
+      break;
+    }
+
+    rrec::showDBSCAN(thresh, frame);
+    if (cv::waitKey(10000) != -1) // wait for any key press
     {
       break;
     }

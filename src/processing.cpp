@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 namespace rrec
 {
@@ -143,32 +144,19 @@ cv::Mat detectSignal(cv::Mat image, cv::Mat brightnessScale)
     return threshold;
 }
 
-class Cluster
+// we use this enum to label points
+enum
 {
-  private:
-    std::vector<std::vector<int>> pointCoords;
-    std::string clusterType;
-    int clusterID;
-
-  public:
-    std::vector<std::vector<int>> getPointCoords() { return pointCoords; }
-    std::string getClusterType() { return clusterType; }
-    int getClusterID() { return clusterID; }
-    void addPoint(std::vector<int> coords) { pointCoords.push_back(coords); }
-
-    Cluster()
-    {
-        clusterType = "Not implemented";
-        clusterID = -1; // it is not yet a cluster <=> ID = -1
-    }
+    unlabelled,
+    noise,
+    perimeter,
+    core
 };
 
-Cluster getNeighbours(std::vector<std::vector<bool>> thresh,
-                      std::vector<std::vector<int>> *clusterFlags,
-                      int i, int j, int clusterSize)
+std::vector<std::vector<int>>
+getNeighbours(std::vector<std::vector<bool>> thresh, int i, int j,
+              int clusterSize)
 {
-    Cluster cluster;
-
     // where we start/stop the loop
     int a_start = i - clusterSize / 2;
     int a_stop = i + clusterSize / 2;
@@ -185,13 +173,73 @@ Cluster getNeighbours(std::vector<std::vector<bool>> thresh,
     if (j > thresh[i].size() - clusterSize / 2 - 1)
         b_stop = thresh[i].size() - 1;
 
+    std::vector<std::vector<int>> neighbours;
     // get the truthy units in cluster
     for (int a = a_start; a < a_stop; ++a)
+    {
         for (int b = b_start; b < b_stop; ++b)
+        {
             if (thresh[a][b])
-                cluster.addPoint(std::vector<int>{a, b});
+                neighbours.push_back(std::vector<int>{a, b});
+        }
+    }
 
-    return cluster;
+    return neighbours;
+}
+
+void getCluster(std::vector<std::vector<bool>> thresh,
+                std::vector<std::vector<int>> *pointFlags,
+                int i, int j, int clusterSize, int minPts)
+{
+    static int clusterNum; // keeps track of which cluster we're up to
+    int clusterStride = 2;
+
+    std::vector<std::vector<int>> neighbours; // this will be used later
+    std::vector<std::vector<int>> clusterPoints = getNeighbours(thresh, i, j,
+                                                                clusterSize);
+
+    if (clusterPoints.size() < minPts)
+    {
+        (*pointFlags)[i][j] = noise;
+        return;
+    }
+
+    // now loop over all neighbours that could be in the cluster:
+    // if a neighbour already has a noise label, relabel as perimeter
+    // if a neighbour is unlabelled, check to see if it is a core node
+    // if the neighbour is a core node, add its neighbours to neighbours
+    // if the neighbour is not core, label it as unlabelled
+
+    for (int a = 0; a < clusterPoints.size(); ++a)
+    {
+        int x = clusterPoints[a][0];
+        int y = clusterPoints[a][1];
+        if ((*pointFlags)[x][y] == noise)
+        {
+            (*pointFlags)[x][y] = perimeter + clusterNum;
+        }
+
+        if ((*pointFlags)[x][y] == unlabelled)
+        {
+            neighbours = getNeighbours(thresh, x, y, clusterSize);
+            if (neighbours.size() >= minPts)
+            {
+                // if execution reached here, [x, y] is a core node point
+                (*pointFlags)[x][y] = core + clusterNum;
+                for (auto coords : neighbours)
+                {
+                    if (std::find(clusterPoints.begin(), clusterPoints.end(),
+                                  coords) == clusterPoints.end())
+                    {
+                        clusterPoints.push_back(coords);
+                    }
+                }
+            }
+        }
+    }
+
+    // incrament the cluster number!
+    clusterNum += clusterStride;
 }
 
 std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
@@ -206,26 +254,33 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
     int minPts = 23;
 
     // the return vector
-    std::vector<std::vector<int>> clusterFlags;
+    std::vector<std::vector<int>>
+    pointFlags(thresh.size(), std::vector<int>(thresh[0].size()));
 
-    // a vector in which all the cluster objects are stored
-    // it could be handy, for now basically unused
-    std::vector<Cluster> clusters;
+    // initialize the return vector to be made up entirely of unlabelled points
     for (int i = 0; i < thresh.size(); ++i)
+    {
         for (int j = 0; j < thresh[i].size(); ++j)
         {
-            if (thresh[i][j])
-            {
-                Cluster cluster = getNeighbours(thresh, &clusterFlags, i, j,
-                                                clusterSize);
+            pointFlags[i][j] = unlabelled;
+        }
+    }
 
-                if (cluster.getPointCoords().size() > 23)
-                    clusters.push_back(cluster);
+    for (int i = 0; i < thresh.size(); ++i)
+    {
+        for (int j = 0; j < thresh[i].size(); ++j)
+        {
+            if (thresh[i][j] && pointFlags[i][j] == unlabelled)
+            {
+                getCluster(thresh, &pointFlags, i, j, clusterSize, minPts);
             }
         }
+    }
+
+    return pointFlags;
 }
 
-cv::Mat dbscan(cv::Mat threshold, cv::Mat origImg)
+cv::Mat showDBSCAN(cv::Mat threshold, cv::Mat origImg)
 {
     /*
         Takes a threshold generated by detectSignal and returns a cv::Mat of the
@@ -251,6 +306,13 @@ cv::Mat dbscan(cv::Mat threshold, cv::Mat origImg)
     }
 
     std::vector<std::vector<int>> cluster = dbscan(thresh);
+
+    for (auto i : cluster)
+    {
+        for (auto j : i)
+            std::cout << j << " ";
+        std::cout << std::endl;
+    }
 }
 
 } // namespace rrec
