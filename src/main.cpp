@@ -61,18 +61,13 @@ int main()
 
     cv::Mat thresh = rrec::detectSignal(localBrightness, brightnessScale);
 
-    cv::imshow("Detector", thresh);
-
-    if (cv::waitKey(30) != -1) // wait for any key press
+    if (cv::waitKey(30) != -1) // kill program on any key press
     {
       break;
     }
 
     rrec::showDBSCAN(thresh, frame);
-    if (cv::waitKey(1000) != -1) // wait for any key press
-    {
-      break;
-    }
+    cv::imshow("Detector", frame);
   }
 
   return 0;

@@ -140,6 +140,10 @@ cv::Mat detectSignal(cv::Mat image, cv::Mat brightnessScale)
     return threshold;
 }
 
+// if MAXMINPTS is defined, optimizations are made which are only available if
+// minpts = clusterSize^2
+#define MAXMINPTS
+
 // we use this enum to label points
 enum
 {
@@ -150,44 +154,82 @@ enum
 };
 
 std::vector<std::vector<int>>
-getNeighbours(std::vector<std::vector<bool>> thresh, int i, int j,
+getNeighbours(std::vector<std::vector<bool>> *thresh, int i, int j,
               int clusterSize)
 {
+    // tracks the number of truthy neighbours found thus far
+    int neighbourNum = 0;
+    std::vector<std::vector<int>> neighbours(25, std::vector<int>(2));
+
     // where we start/stop the loop
     int a_start = i - clusterSize / 2;
     int a_stop = i + clusterSize / 2;
     int b_start = j - clusterSize / 2;
     int b_stop = j + clusterSize / 2;
 
+#ifndef MAXMINPTS
     // check to see if we're on the edge - if we are, prevent segfault
     if (i < clusterSize / 2)
         a_start = 0;
     if (j < clusterSize / 2)
         b_start = 0;
-    if (i > (thresh.size() - clusterSize / 2 - 1))
-        a_stop = thresh.size() - 1;
-    if (j > (thresh[i].size() - clusterSize / 2 - 1))
-        b_stop = thresh[i].size() - 1;
+    if (i > ((*thresh).size() - clusterSize / 2 - 1))
+        a_stop = (*thresh).size() - 1;
+    if (j > ((*thresh)[i].size() - clusterSize / 2 - 1))
+        b_stop = (*thresh)[i].size() - 1;
 
-    std::vector<std::vector<int>> neighbours;
     // get the truthy units in cluster
     for (int a = a_start; a <= a_stop; ++a)
     {
         for (int b = b_start; b <= b_stop; ++b)
         {
-            if (thresh[a][b])
-                neighbours.push_back(std::vector<int>{a, b});
+            if ((*thresh)[a][b])
+            {
+                neighbours[neighbourNum++] = std::vector<int>{a, b};
+            }
         }
     }
 
+    // finally resize neighbours to be the correct size
+    neighbours.resize(neighbourNum);
+
+#else
+
+    std::vector<std::vector<int>> emptyVector;
+
+    int halfCSize = clusterSize / 2;
+
+    // there can be no core nodes on the edge of an image
+    if (i < halfCSize ||
+        j < halfCSize ||
+        i > ((*thresh).size() - halfCSize - 1) ||
+        j > ((*thresh)[i].size() - halfCSize - 1))
+        return emptyVector;
+
+    // check to see if we're in a cluster
+    for (int a = a_start; a <= a_stop; ++a)
+    {
+        for (int b = b_start; b <= b_stop; ++b)
+        {
+            if ((*thresh)[a][b])
+            {
+                neighbours[neighbourNum][0] = a;
+                neighbours[neighbourNum++][1] = b;
+            }
+            else
+                return emptyVector;
+        }
+    }
+
+#endif
     return neighbours;
 }
 
-void getCluster(std::vector<std::vector<bool>> thresh,
+void getCluster(std::vector<std::vector<bool>> *thresh,
                 std::vector<std::vector<int>> *pointFlags,
                 int i, int j, int clusterSize, int minPts)
 {
-    static int clusterNum; // keeps track of which cluster we're up to
+    static long long int clusterNum; // keeps track of which cluster we're up to
     int clusterStride = 2;
 
     std::vector<std::vector<int>> neighbours; // this will be used later
@@ -224,7 +266,9 @@ void getCluster(std::vector<std::vector<bool>> thresh,
                 (*pointFlags)[x][y] = core + clusterNum;
                 for (auto coords : neighbours)
                 {
-                    if (std::find(clusterPoints.begin(), clusterPoints.end(),
+                    if ((*pointFlags)[coords[0]][coords[1]] != unlabelled)
+                        continue;
+                    if (std::find(clusterPoints.begin() + a, clusterPoints.end(),
                                   coords) == clusterPoints.end())
                     {
                         clusterPoints.push_back(coords);
@@ -248,10 +292,9 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
         Takes a 2D boolean vector, returns 2D vector of cluster locations.
     */
     // clusterSize must be an odd integer
-    int clusterSize = 5;
-    // required number of true points in a 5x5 grid surrounding a true point in
-    // order to form a cluster
-    int minPts = 23;
+    int clusterSize = 3;
+    // set minPts = every neighbour - this allows for further optimizations!
+    int minPts = clusterSize * clusterSize;
 
     // the return vector
     std::vector<std::vector<int>>
@@ -274,7 +317,7 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
         {
             if (thresh[i][j] && (pointFlags[i][j] == unlabelled))
             {
-                getCluster(thresh, &pointFlags, i, j, clusterSize, minPts);
+                getCluster(&thresh, &pointFlags, i, j, clusterSize, minPts);
             }
             if (!thresh[i][j])
             {
@@ -286,7 +329,7 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
     return pointFlags;
 }
 
-cv::Mat showDBSCAN(cv::Mat threshold, cv::Mat origImg)
+void showDBSCAN(cv::Mat threshold, cv::Mat origImg)
 {
     /*
         Takes a threshold generated by detectSignal and returns a cv::Mat of the
@@ -313,14 +356,29 @@ cv::Mat showDBSCAN(cv::Mat threshold, cv::Mat origImg)
 
     std::vector<std::vector<int>> cluster = dbscan(thresh);
 
-    for (auto i : cluster)
-    {
-        for (auto j : i)
-            std::cout << j << " ";
-        std::cout << std::endl;
-    }
+    // for (auto i : cluster)
+    // {
+    //     for (auto j : i)
+    //         std::cout << j << " ";
+    //     std::cout << std::endl;
+    // }
 
-    return origImg;
+    // now we have the thresholded image we can redraw image to show clustering
+    unsigned char *imgPointer;
+
+    for (int i = 0; i < origImg.rows; ++i)
+    {
+        imgPointer = origImg.ptr<unsigned char>(i);
+        for (int j = 0; j < origImg.cols; ++j)
+        {
+            if (cluster[i][j] == 1)
+                imgPointer[j] = 0;
+            else if (cluster[i][j] % 2 == 0)
+                imgPointer[j] = 255;
+            else
+                imgPointer[j] = 128;
+        }
+    }
 }
 
 } // namespace rrec
