@@ -157,15 +157,7 @@ std::vector<std::vector<int>>
 getNeighbours(std::vector<std::vector<bool>> *thresh, int i, int j,
               int clusterSize)
 {
-    // tracks the number of truthy neighbours found thus far
-    int neighbourNum = 0;
-    std::vector<std::vector<int>> neighbours(25, std::vector<int>(2));
-
-    // where we start/stop the loop
-    int a_start = i - clusterSize / 2;
-    int a_stop = i + clusterSize / 2;
-    int b_start = j - clusterSize / 2;
-    int b_stop = j + clusterSize / 2;
+    std::vector<std::vector<int>> neighbours(4, std::vector<int>(2));
 
 #ifndef MAXMINPTS
     // check to see if we're on the edge - if we are, prevent segfault
@@ -197,29 +189,59 @@ getNeighbours(std::vector<std::vector<bool>> *thresh, int i, int j,
 
     std::vector<std::vector<int>> emptyVector;
 
-    int halfCSize = clusterSize / 2;
-
     // there can be no core nodes on the edge of an image
-    if (i < halfCSize ||
-        j < halfCSize ||
-        i > ((*thresh).size() - halfCSize - 1) ||
-        j > ((*thresh)[i].size() - halfCSize - 1))
+    if (i == 0 ||
+        j == 0 ||
+        i == ((*thresh).size() - 1) ||
+        j == ((*thresh)[i].size() - 1))
         return emptyVector;
 
     // check to see if we're in a cluster
-    for (int a = a_start; a <= a_stop; ++a)
+    // for (int a = a_start; a <= a_stop; ++a)
+    // {
+    //     for (int b = b_start; b <= b_stop; ++b)
+    //     {
+    //         if ((*thresh)[a][b])
+    //         {
+    //             neighbours[neighbourNum][0] = a;
+    //             neighbours[neighbourNum++][1] = b;
+    //         }
+    //         else
+    //             return emptyVector;
+    //     }
+    // }
+    if ((*thresh)[i - 1][j])
     {
-        for (int b = b_start; b <= b_stop; ++b)
-        {
-            if ((*thresh)[a][b])
-            {
-                neighbours[neighbourNum][0] = a;
-                neighbours[neighbourNum++][1] = b;
-            }
-            else
-                return emptyVector;
-        }
+
+        neighbours[0][0] = i - 1;
+        neighbours[0][1] = j;
     }
+    else
+        return emptyVector;
+    if ((*thresh)[i][j - 1])
+    {
+
+        neighbours[1][0] = i;
+        neighbours[1][1] = j - 1;
+    }
+    else
+        return emptyVector;
+    if ((*thresh)[i + 1][j])
+    {
+
+        neighbours[2][0] = i + 1;
+        neighbours[2][1] = j;
+    }
+    else
+        return emptyVector;
+    if ((*thresh)[i][j + 1])
+    {
+
+        neighbours[3][0] = i;
+        neighbours[3][1] = j + 1;
+    }
+    else
+        return emptyVector;
 
 #endif
     return neighbours;
@@ -294,7 +316,7 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
     // clusterSize must be an odd integer
     int clusterSize = 3;
     // set minPts = every neighbour - this allows for further optimizations!
-    int minPts = clusterSize * clusterSize;
+    int minPts = 4;
 
     // the return vector
     std::vector<std::vector<int>>
