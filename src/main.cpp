@@ -69,7 +69,7 @@ int main()
     }
 
     rrec::showDBSCAN(thresh, frame);
-    if (cv::waitKey(10000) != -1) // wait for any key press
+    if (cv::waitKey(1000) != -1) // wait for any key press
     {
       break;
     }

@@ -5,10 +5,6 @@
 
 namespace rrec
 {
-void basicThreshold(cv::Mat image)
-{
-    // all imgPointers below cutoff are set to zero, all imgPointers >= are set to 255
-}
 
 cv::Mat contrast(cv::Mat image)
 {
@@ -24,7 +20,7 @@ cv::Mat fourierTransform(cv::Mat image)
 {
     cv::Mat padded; //expand input image to optimal size
     int m = cv::getOptimalDFTSize(image.rows);
-    int n = cv::getOptimalDFTSize(image.cols); // on the border add zero imgPointers
+    int n = cv::getOptimalDFTSize(image.cols);
     copyMakeBorder(image, padded, 0, m - image.rows, 0, n - image.cols,
                    cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
@@ -168,16 +164,16 @@ getNeighbours(std::vector<std::vector<bool>> thresh, int i, int j,
         a_start = 0;
     if (j < clusterSize / 2)
         b_start = 0;
-    if (i > thresh.size() - clusterSize / 2 - 1)
+    if (i > (thresh.size() - clusterSize / 2 - 1))
         a_stop = thresh.size() - 1;
-    if (j > thresh[i].size() - clusterSize / 2 - 1)
+    if (j > (thresh[i].size() - clusterSize / 2 - 1))
         b_stop = thresh[i].size() - 1;
 
     std::vector<std::vector<int>> neighbours;
     // get the truthy units in cluster
-    for (int a = a_start; a < a_stop; ++a)
+    for (int a = a_start; a <= a_stop; ++a)
     {
-        for (int b = b_start; b < b_stop; ++b)
+        for (int b = b_start; b <= b_stop; ++b)
         {
             if (thresh[a][b])
                 neighbours.push_back(std::vector<int>{a, b});
@@ -208,7 +204,7 @@ void getCluster(std::vector<std::vector<bool>> thresh,
     // if a neighbour already has a noise label, relabel as perimeter
     // if a neighbour is unlabelled, check to see if it is a core node
     // if the neighbour is a core node, add its neighbours to neighbours
-    // if the neighbour is not core, label it as unlabelled
+    // if the neighbour is not core, label it as perimeter
 
     for (int a = 0; a < clusterPoints.size(); ++a)
     {
@@ -234,6 +230,10 @@ void getCluster(std::vector<std::vector<bool>> thresh,
                         clusterPoints.push_back(coords);
                     }
                 }
+            }
+            else
+            {
+                (*pointFlags)[x][y] = perimeter + clusterNum;
             }
         }
     }
@@ -266,13 +266,19 @@ std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
         }
     }
 
+    // do the clustering
     for (int i = 0; i < thresh.size(); ++i)
     {
+        std::cout << "Clustering about row: " << i << std::endl;
         for (int j = 0; j < thresh[i].size(); ++j)
         {
-            if (thresh[i][j] && pointFlags[i][j] == unlabelled)
+            if (thresh[i][j] && (pointFlags[i][j] == unlabelled))
             {
                 getCluster(thresh, &pointFlags, i, j, clusterSize, minPts);
+            }
+            if (!thresh[i][j])
+            {
+                pointFlags[i][j] = noise;
             }
         }
     }
@@ -313,6 +319,8 @@ cv::Mat showDBSCAN(cv::Mat threshold, cv::Mat origImg)
             std::cout << j << " ";
         std::cout << std::endl;
     }
+
+    return origImg;
 }
 
 } // namespace rrec
