@@ -393,9 +393,9 @@ void showDBSCAN(cv::Mat threshold, cv::Mat origImg)
         imgPointer = origImg.ptr<unsigned char>(i);
         for (int j = 0; j < origImg.cols; ++j)
         {
-            if (cluster[i][j] == 1)
+            if (cluster[i][j] == noise)
                 imgPointer[j] = 0;
-            else if (cluster[i][j] % 2 == 0)
+            else if (cluster[i][j] % 2 == perimeter % 2)
                 imgPointer[j] = 255;
             else
                 imgPointer[j] = 128;
