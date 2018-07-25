@@ -140,166 +140,151 @@ cv::Mat detectSignal(cv::Mat image, cv::Mat brightnessScale)
     return threshold;
 }
 
-// if MAXMINPTS is defined, optimizations are made which are only available if
-// minpts = clusterSize^2
-#define MAXMINPTS
+#define MAXCLUSTERSIZE 10000
+
+std::vector<std::vector<int>> clusterPoints(MAXCLUSTERSIZE,
+                                            std::vector<int>(2));
 
 // we use this enum to label points
 enum
 {
     unlabelled,
     noise,
+    TBD, // TBD label implies 'it is perimeter or core, soon to be determined'
     perimeter,
     core
 };
 
-std::vector<std::vector<int>>
-getNeighbours(std::vector<std::vector<bool>> *thresh, int i, int j,
-              int clusterSize)
+void getNeighbours(std::vector<std::vector<bool>> &thresh,
+                   std::vector<std::vector<int>> &neighbours,
+                   int i, int j, int eps)
 {
-    std::vector<std::vector<int>> neighbours(4, std::vector<int>(2));
-
-#ifndef MAXMINPTS
-    // check to see if we're on the edge - if we are, prevent segfault
-    if (i < clusterSize / 2)
-        a_start = 0;
-    if (j < clusterSize / 2)
-        b_start = 0;
-    if (i > ((*thresh).size() - clusterSize / 2 - 1))
-        a_stop = (*thresh).size() - 1;
-    if (j > ((*thresh)[i].size() - clusterSize / 2 - 1))
-        b_stop = (*thresh)[i].size() - 1;
-
-    // get the truthy units in cluster
-    for (int a = a_start; a <= a_stop; ++a)
-    {
-        for (int b = b_start; b <= b_stop; ++b)
-        {
-            if ((*thresh)[a][b])
-            {
-                neighbours[neighbourNum++] = std::vector<int>{a, b};
-            }
-        }
-    }
-
-    // finally resize neighbours to be the correct size
-    neighbours.resize(neighbourNum);
-
-#else
-
-    std::vector<std::vector<int>> emptyVector;
-
     // there can be no core nodes on the edge of an image
     if (i == 0 ||
         j == 0 ||
-        i == ((*thresh).size() - 1) ||
-        j == ((*thresh)[i].size() - 1))
-        return emptyVector;
+        i == (thresh.size() - 1) ||
+        j == (thresh[i].size() - 1))
+    {
+        neighbours[0][0] = -1;
+        return;
+    }
 
-    // check to see if we're in a cluster
-    // for (int a = a_start; a <= a_stop; ++a)
-    // {
-    //     for (int b = b_start; b <= b_stop; ++b)
-    //     {
-    //         if ((*thresh)[a][b])
-    //         {
-    //             neighbours[neighbourNum][0] = a;
-    //             neighbours[neighbourNum++][1] = b;
-    //         }
-    //         else
-    //             return emptyVector;
-    //     }
-    // }
-    if ((*thresh)[i - 1][j])
+    if (thresh[i - 1][j])
     {
 
         neighbours[0][0] = i - 1;
         neighbours[0][1] = j;
     }
     else
-        return emptyVector;
-    if ((*thresh)[i][j - 1])
+    {
+        neighbours[0][0] = -1;
+        return;
+    }
+    if (thresh[i][j - 1])
     {
 
         neighbours[1][0] = i;
         neighbours[1][1] = j - 1;
     }
     else
-        return emptyVector;
-    if ((*thresh)[i + 1][j])
+    {
+        neighbours[0][0] = -1;
+        return;
+    }
+    if (thresh[i + 1][j])
     {
 
         neighbours[2][0] = i + 1;
         neighbours[2][1] = j;
     }
     else
-        return emptyVector;
-    if ((*thresh)[i][j + 1])
+    {
+        neighbours[0][0] = -1;
+        return;
+    }
+    if (thresh[i][j + 1])
     {
 
         neighbours[3][0] = i;
         neighbours[3][1] = j + 1;
     }
     else
-        return emptyVector;
-
-#endif
-    return neighbours;
+    {
+        neighbours[0][0] = -1;
+        return;
+    }
 }
 
-void getCluster(std::vector<std::vector<bool>> *thresh,
-                std::vector<std::vector<int>> *pointFlags,
-                int i, int j, int clusterSize, int minPts)
+void getCluster(std::vector<std::vector<bool>> &thresh,
+                std::vector<std::vector<int>> &pointFlags,
+                int i, int j, int eps, int minPts)
 {
     static long long int clusterNum; // keeps track of which cluster we're up to
+    int N = 0;                       // number of points currently in cluster
     int clusterStride = 2;
 
-    std::vector<std::vector<int>> neighbours; // this will be used later
-    std::vector<std::vector<int>> clusterPoints = getNeighbours(thresh, i, j,
-                                                                clusterSize);
+    std::vector<std::vector<int>> neighbours(4, std::vector<int>(2));
+    getNeighbours(thresh, neighbours, i, j, eps);
 
-    if (clusterPoints.size() < minPts)
+    if (neighbours[0][0] == -1)
     {
-        (*pointFlags)[i][j] = noise;
+        pointFlags[i][j] = noise;
         return;
+    }
+
+    pointFlags[i][j] = core;
+    // first label all points in neighbours as TBD if they were previously
+    // unlabelled
+    for (auto points : neighbours)
+    {
+        N += 1;
+        if (pointFlags[points[0]][points[1]] == unlabelled)
+            pointFlags[points[0]][points[1]] = TBD;
+    }
+
+    // add the neighbours to clusterPoints
+    for (int i = 0; i < 4; ++i)
+    {
+        clusterPoints[i] = neighbours[i];
     }
 
     // now loop over all neighbours that could be in the cluster:
     // if a neighbour already has a noise label, relabel as perimeter
     // if a neighbour is unlabelled, check to see if it is a core node
     // if the neighbour is a core node, add its neighbours to neighbours
+    // if the core node's neighbours are unlabelled, label them as TBD
     // if the neighbour is not core, label it as perimeter
-
-    for (int a = 0; a < clusterPoints.size(); ++a)
+    for (int a = 0; a < N; ++a)
     {
         int x = clusterPoints[a][0];
         int y = clusterPoints[a][1];
-        if ((*pointFlags)[x][y] == noise)
+        if (pointFlags[x][y] == noise)
         {
-            (*pointFlags)[x][y] = perimeter + clusterNum;
+            pointFlags[x][y] = perimeter + clusterNum;
         }
 
-        if ((*pointFlags)[x][y] == unlabelled)
+        if (pointFlags[x][y] == TBD)
         {
-            neighbours = getNeighbours(thresh, x, y, clusterSize);
-            if (neighbours.size() >= minPts)
+            getNeighbours(thresh, neighbours, x, y, eps);
+
+            // the next line can be read as 'if [x, y] is a core node'
+            if (neighbours[0][0] != -1)
             {
                 // if execution reached here, [x, y] is a core node point
-                (*pointFlags)[x][y] = core + clusterNum;
+                pointFlags[x][y] = core + clusterNum;
                 for (auto coords : neighbours)
                 {
-                    if ((*pointFlags)[coords[0]][coords[1]] != unlabelled)
-                        continue;
-                    if (std::find(clusterPoints.begin() + a, clusterPoints.end(),
-                                  coords) == clusterPoints.end())
+                    if (pointFlags[coords[0]][coords[1]] == unlabelled)
                     {
-                        clusterPoints.push_back(coords);
+                        pointFlags[coords[0]][coords[1]] = TBD;
+                        clusterPoints[N] = coords;
+                        N += 1;
                     }
                 }
             }
             else
             {
-                (*pointFlags)[x][y] = perimeter + clusterNum;
+                pointFlags[x][y] = perimeter + clusterNum;
             }
         }
     }
@@ -308,47 +293,33 @@ void getCluster(std::vector<std::vector<bool>> *thresh,
     clusterNum += clusterStride;
 }
 
-std::vector<std::vector<int>> dbscan(std::vector<std::vector<bool>> thresh)
+void dbscan(std::vector<std::vector<bool>> &thresh,
+            std::vector<std::vector<int>> &pointFlags)
 {
-    /*
-        Takes a 2D boolean vector, returns 2D vector of cluster locations.
-    */
-    // clusterSize must be an odd integer
-    int clusterSize = 3;
+    // eps must be an odd integer
+    int eps = 3;
     // set minPts = every neighbour - this allows for further optimizations!
     int minPts = 4;
 
-    // the return vector
-    std::vector<std::vector<int>>
-    pointFlags(thresh.size(), std::vector<int>(thresh[0].size()));
-
-    // initialize the return vector to be made up entirely of unlabelled points
-    for (int i = 0; i < thresh.size(); ++i)
-    {
-        for (int j = 0; j < thresh[i].size(); ++j)
-        {
-            pointFlags[i][j] = unlabelled;
-        }
-    }
+    int rows = thresh.size();
+    int cols = thresh[0].size();
 
     // do the clustering
-    for (int i = 0; i < thresh.size(); ++i)
+    for (int i = 0; i < rows; ++i)
     {
-        std::cout << "Clustering about row: " << i << std::endl;
-        for (int j = 0; j < thresh[i].size(); ++j)
+        // std::cout << "Clustering about row: " << i << std::endl;
+        for (int j = 0; j < cols; ++j)
         {
             if (thresh[i][j] && (pointFlags[i][j] == unlabelled))
             {
-                getCluster(&thresh, &pointFlags, i, j, clusterSize, minPts);
+                getCluster(thresh, pointFlags, i, j, eps, minPts);
             }
-            if (!thresh[i][j])
+            if (!thresh[i][j] && pointFlags[i][j] == unlabelled)
             {
                 pointFlags[i][j] = noise;
             }
         }
     }
-
-    return pointFlags;
 }
 
 void showDBSCAN(cv::Mat threshold, cv::Mat origImg)
@@ -361,6 +332,8 @@ void showDBSCAN(cv::Mat threshold, cv::Mat origImg)
     int cols = threshold.cols;
 
     std::vector<std::vector<bool>> thresh(rows, std::vector<bool>(cols));
+    std::vector<std::vector<int>>
+    pointFlags(rows, std::vector<int>(cols, unlabelled));
 
     // now we want to populate the bool vector
     unsigned char *thresholdPointer;
@@ -376,14 +349,7 @@ void showDBSCAN(cv::Mat threshold, cv::Mat origImg)
         }
     }
 
-    std::vector<std::vector<int>> cluster = dbscan(thresh);
-
-    // for (auto i : cluster)
-    // {
-    //     for (auto j : i)
-    //         std::cout << j << " ";
-    //     std::cout << std::endl;
-    // }
+    dbscan(thresh, pointFlags);
 
     // now we have the thresholded image we can redraw image to show clustering
     unsigned char *imgPointer;
@@ -393,9 +359,9 @@ void showDBSCAN(cv::Mat threshold, cv::Mat origImg)
         imgPointer = origImg.ptr<unsigned char>(i);
         for (int j = 0; j < origImg.cols; ++j)
         {
-            if (cluster[i][j] == noise)
+            if (pointFlags[i][j] == noise)
                 imgPointer[j] = 0;
-            else if (cluster[i][j] % 2 == perimeter % 2)
+            else if (pointFlags[i][j] % 2 == perimeter % 2)
                 imgPointer[j] = 255;
             else
                 imgPointer[j] = 128;
