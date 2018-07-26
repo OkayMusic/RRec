@@ -2,6 +2,13 @@
 
 #include "screencap.hpp"
 #include "processing.hpp"
+#include "clustering.hpp"
+
+namespace rrec
+{
+// class
+
+}; // namespace rrec
 
 int main()
 {
