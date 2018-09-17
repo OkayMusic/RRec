@@ -136,7 +136,6 @@ cv::Mat detectSignal(cv::Mat image, cv::Mat brightnessScale)
                 thresholdPointer[j] = 0;
         }
     }
-
     return threshold;
 }
 
