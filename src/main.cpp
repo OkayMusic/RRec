@@ -266,7 +266,7 @@ void handleSamLTEMAnalysis()
         cv::Mat currentImage(rows, cols, CV_32FC1);
 
         // pass the matrix to picToMat, which will load and convert currentImage
-        std::string path = "../binary_data/fr_50001.pic";
+        // std::string path = "../binary_data/fr_50001.pic";
         rrec::picToMat(path, currentImage);
 
         cv::imwrite("testy2.jpg", currentImage);
