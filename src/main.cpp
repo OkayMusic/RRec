@@ -256,6 +256,11 @@ void handleSamLTEMAnalysis()
         std::string path;
         std::cin >> path;
 
+        if (path.compare("quit"))
+        {
+            exit(0);
+        }
+
         // // get the clustering parameters
         // int L; // lengthscale over which brightness varies
         // int d; // lengthscale over which signal is detected
