@@ -121,8 +121,19 @@ void removeBackground(std::string path, std::string fileName)
 
     std::vector<float> F(rows * cols);
     float f;
+    char headerByte;
+
     double counter;
     float maxVal{0};
+
+    // skip the first num_header_bytes bytes
+    int num_header_bytes{624};
+    for (int i = 0; i < num_header_bytes; ++i)
+        ;
+    {
+        inf.read(reinterpret_cast<char *>(&headerByte), sizeof(float));
+    }
+
     for (int i = 0; i < rows * cols; ++i)
     {
         inf.read(reinterpret_cast<char *>(&f), sizeof(float));
@@ -165,15 +176,110 @@ void removeBackground(std::string path, std::string fileName)
 
     imwrite(fileName, img);
 }
+
+void picToMat(std::string path, cv::Mat outImg)
+{
+    const int rows{1296};
+    const int cols{1728};
+
+    std::ifstream inf(path, std::ios::binary);
+
+    std::vector<float> F(rows * cols);
+    float f;
+    char headerByte;
+
+    double counter;
+    float maxVal{0};
+
+    // skip the first num_header_bytes bytes
+    int num_header_bytes{624};
+    for (int i = 0; i < num_header_bytes; ++i)
+        ;
+    {
+        inf.read(reinterpret_cast<char *>(&headerByte), sizeof(float));
+    }
+
+    for (int i = 0; i < rows * cols; ++i)
+    {
+        inf.read(reinterpret_cast<char *>(&f), sizeof(float));
+        counter += static_cast<double>(f);
+        F[i] = f;
+        if (f > maxVal)
+            maxVal = f;
+    }
+    double mean{counter / static_cast<double>(rows * cols)};
+    std::cout << "mean: " << mean << ", maxVal: " << maxVal << std::endl;
+
+    int cutoff = 900;
+    // kill super bright background pixels
+    for (int i = 0; i < rows * cols; ++i)
+    {
+        if (F[i] > cutoff)
+            F[i] = cutoff;
+    }
+
+    // find the largest element of the array
+    maxVal = 0;
+    for (int i = 0; i < rows * cols; ++i)
+    {
+        if (F[i] > maxVal)
+        {
+            maxVal = F[i];
+        }
+    }
+
+    // put in correct range for a cv::mat floaty image
+    for (int i = 0; i < rows * cols; ++i)
+    {
+        F[i] = F[i] * 255.0 / maxVal;
+    }
+
+    memcpy(outImg.data, F.data(), F.size() * sizeof(float));
+    outImg.convertTo(outImg, CV_8UC1);
+}
+
 }; // namespace rrec
+
+void handleSamLTEMAnalysis()
+{
+    /*
+    While(true), waits for a series of parameters for clustering and a path to
+    the image which will be processed.
+    */
+    // make a cv::Mat which holds an image of 32bit floating point numbers
+    const int rows{1296};
+    const int cols{1728};
+
+    while (1)
+    {
+        // get the path to the image to be analyzed
+        std::string path;
+        std::cin >> path;
+
+        // // get the clustering parameters
+        // int L; // lengthscale over which brightness varies
+        // int d; // lengthscale over which signal is detected
+        // double sigma;
+        //
+        // std::cin >> L;
+
+        cv::Mat currentImage(rows, cols, CV_32FC1);
+
+        // pass the matrix to picToMat, which will load and convert currentImage
+        std::string path = "../binary_data/fr_50001.pic";
+        rrec::picToMat(path, currentImage);
+
+        cv::imwrite("testy2.jpg", currentImage);
+    }
+}
 
 int main()
 {
-    std::string path = "../video/LTEM_cam.mpg";
-    rrec::detectVideo(path);
+    // std::string path = "../video/LTEM_cam.mpg";
+    // std::cout << path << std::endl;
+    // rrec::detectVideo(path);
 
-    // std::string path = "../binary_data/skyrmion.bin";
-    // rrec::removeBackground(path, "test.jpg");
+    handleSamLTEMAnalysis();
 
     return 0;
 }
