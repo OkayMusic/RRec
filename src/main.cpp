@@ -256,25 +256,38 @@ void handleSamLTEMAnalysis()
         std::string path;
         std::cin >> path;
 
-        if (path.compare("quit"))
-        {
-            exit(0);
-        }
+        // get the clustering parameters
+        int L; // lengthscale over which brightness varies
+        int d; // lengthscale over which signal is detected
+        double sigma;
 
-        // // get the clustering parameters
-        // int L; // lengthscale over which brightness varies
-        // int d; // lengthscale over which signal is detected
-        // double sigma;
-        //
-        // std::cin >> L;
+        std::cin >> L;
+        std::cin >> d;
+        std::cin >> sigma;
 
-        cv::Mat currentImage(rows, cols, CV_32FC1);
+        cv::Mat frame(rows, cols, CV_32FC1);
 
         // pass the matrix to picToMat, which will load and convert currentImage
         // std::string path = "../binary_data/fr_50001.pic";
-        rrec::picToMat(path, currentImage);
+        rrec::picToMat(path, frame);
 
-        cv::imwrite("testy2.jpg", currentImage);
+        // equalize the colour histogram (this should make movies from different
+        // sources look reasonably similar, making the code more portable)
+        // additionally contrast is always increased wich is useful for processing
+        cv::equalizeHist(frame, frame);
+
+        // we want the gaussian blur value at each pixel to give us a gauge of
+        // relative brightness in that region of the image
+        int xScale = 51;
+        int yScale = 51;
+
+        cv::Mat brightnessScale;
+        cv::GaussianBlur(frame, brightnessScale, cv::Size(xScale, yScale), 0);
+
+        cv::Mat localBrightness;
+        cv::GaussianBlur(frame, localBrightness, cv::Size(7, 7), 0);
+
+        cv::Mat thresh = rrec::detectSignal(localBrightness, brightnessScale);
     }
 }
 
