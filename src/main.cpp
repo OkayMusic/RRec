@@ -123,11 +123,11 @@ void handleSamLTEMAnalysis()
         double sigma; // CURRENTLY UNUSED!!
 
         std::cin >> L;
-        std::cout << "Received value of L: " << L << std::endl;
+        // std::cout << "Received value of L: " << L << std::endl;
         std::cin >> d;
-        std::cout << "Received value of d: " << d << std::endl;
+        // std::cout << "Received value of d: " << d << std::endl;
         std::cin >> sigma;
-        std::cout << "Received value of sigma: " << sigma << std::endl;
+        // std::cout << "Received value of sigma: " << sigma << std::endl;
 
         // make sure that L and d are odd numbers
         if (L % 2 == 0)
