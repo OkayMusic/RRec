@@ -22,16 +22,6 @@ enum
     core
 };
 
-/* DEFINITION OF CLUSTER CLASS */
-
-int Cluster::getClusterNum() { return clusterNum; }
-
-Cluster::Cluster(int N) { clusterNum = N; }
-
-int Cluster::size() { return corePoints.size() + outerPoints.size(); }
-
-/* END DEFINITION OF CLUSTER CLASS */
-
 void getNeighbours(std::vector<std::vector<bool>> &thresh,
                    std::vector<std::array<int, 2>> &neighbours,
                    int i, int j, int eps)
