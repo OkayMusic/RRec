@@ -78,6 +78,9 @@ void showSamTheDeets(std::vector<Cluster> clusters)
 {
     for (Cluster cluster : clusters)
     {
+        // print the size of the cluster
+        std::cout << ":" << cluster.size();
+
         // first give sam the core points
         for (auto coord : cluster.corePoints)
         {
@@ -91,11 +94,8 @@ void showSamTheDeets(std::vector<Cluster> clusters)
             std::cout << coord[0] << "," << coord[1] << ",";
         }
 
-        // also give the size of the cluster
-        std::cout << ":" << cluster.size();
         std::cout << std::endl;
     }
-
     std::cout << ";" << std::endl;
 }
 
