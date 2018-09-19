@@ -293,8 +293,8 @@ std::vector<Cluster> showDBSCAN(cv::Mat threshold, cv::Mat outImage)
     stddev /= clusters.size();
     stddev = std::sqrt(stddev);
 
-    std::cout << "stddev: " << stddev << ", mean: " << mean << std::endl;
-    std::cout << "min: " << min << ", max: " << max << std::endl;
+    // std::cout << "stddev: " << stddev << ", mean: " << mean << std::endl;
+    // std::cout << "min: " << min << ", max: " << max << std::endl;
 
     // now work out which clusters are anomalous, saving the good'uns in
     // finalClusters

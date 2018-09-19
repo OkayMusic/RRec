@@ -15,6 +15,12 @@ void picToMat(std::string path, cv::Mat &outImg)
 
     std::ifstream inf(path, std::ios::binary);
 
+    if (!inf.is_open())
+    {
+        std::cout << "Couldn't open data file, exiting..." << std::endl;
+        exit(-1);
+    }
+
     std::vector<float> F(rows * cols);
     float f;
     char headerByte;
@@ -73,24 +79,24 @@ void showSamTheDeets(std::vector<Cluster> clusters)
     for (Cluster cluster : clusters)
     {
         // first give sam the core points
-        std::cout << "core_points: ";
         for (auto coord : cluster.corePoints)
         {
-            std::cout << coord[0] << " " << coord[1] << ",";
+            std::cout << coord[0] << "," << coord[1] << ",";
         }
-        std::cout << ";";
 
         // now give sam the points on the cluster's perimeter
-        std::cout << "outer_points: ";
+        std::cout << ":";
         for (auto coord : cluster.outerPoints)
         {
-            std::cout << coord[0] << " " << coord[1] << ",";
+            std::cout << coord[0] << "," << coord[1] << ",";
         }
-        std::cout << ";";
 
         // also give the size of the cluster
-        std::cout << "cluster_size: " << cluster.size();
+        std::cout << ":" << cluster.size();
+        std::cout << std::endl;
     }
+
+    std::cout << ";" << std::endl;
 }
 
 }; // namespace rrec
@@ -117,8 +123,11 @@ void handleSamLTEMAnalysis()
         double sigma; // CURRENTLY UNUSED!!
 
         std::cin >> L;
+        std::cout << "Received value of L: " << L << std::endl;
         std::cin >> d;
+        std::cout << "Received value of d: " << d << std::endl;
         std::cin >> sigma;
+        std::cout << "Received value of sigma: " << sigma << std::endl;
 
         // make sure that L and d are odd numbers
         if (L % 2 == 0)
