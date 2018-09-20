@@ -26,7 +26,7 @@ void picToMat(std::string path, cv::Mat &outImg)
     int num_header_bytes{624};
     for (int i = 0; i < num_header_bytes; ++i)
     {
-        inf.read(reinterpret_cast<char *>(&headerByte), sizeof(float));
+        inf.read(reinterpret_cast<char *>(&headerByte), 1);
     }
 
     for (int i = 0; i < rows * cols; ++i)
