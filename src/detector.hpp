@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -24,7 +25,11 @@ class Detector
     float pic_cutoff; // .pic max threshold, defaults to 900 (see constructors)
 
   public:
-    bool is_open; // true if image was loaded properly into RAM
+    bool is_open;       // true if image was loaded properly into RAM
+    bool is_background; // true if calculate_background has been called properly
+    bool is_signal;     // true if calculate_signal has been called properly
+    bool is_clustered;  // true if calculate_significance has been called
+    void err_not_open();
 
     void load_vector(std::vector<char> image); // not implemented
     void load_image(std::string path);

@@ -3,6 +3,11 @@
 namespace rrec
 {
 
+void Detector::err_not_open()
+{
+    std::cout << "Error: couldn't open file" << std::endl;
+}
+
 void Detector::load_image()
 {
     // load image at path this.path into image_main
@@ -62,14 +67,18 @@ void Detector::load_pic(int rows, int cols)
     }
 
     // convert image_main temporarily to 32bit floating point image type
-    image_main.convertTo(image_main, CV_32FC1);
-    image_main.resize(rows, cols); // and make sure it's the right size
+    image_main.create(rows, cols, CV_32FC1); // and make sure it's the right size
 
     // memcpy the big floaty vector directly into image_main
     memcpy(image_main.data, F.data(), F.size() * sizeof(float));
 
     // convert the 4byte floaty image to an ordinary grayscale image
     image_main.convertTo(image_main, CV_8UC1);
+
+    if (!image_main.empty())
+    {
+        is_open = true;
+    }
 }
 
 void Detector::load_pic(float cutoff, int rows, int cols)
@@ -81,14 +90,14 @@ void Detector::load_pic(float cutoff, int rows, int cols)
 void Detector::load_pic(std::string path, int rows, int cols)
 {
     // load .pic file at this.path into image_main
-    path = path;
+    this->path = path;
     load_pic(rows, cols);
 }
 
 void Detector::load_pic(std::string path, float cutoff, int rows, int cols)
 {
     pic_cutoff = cutoff;
-    path = path;
+    this->path = path;
     load_pic(rows, cols);
 }
 
@@ -130,11 +139,28 @@ void Detector::equalize()
 void Detector::calculate_background(int L)
 {
     cv::GaussianBlur(image_main, image_L, cv::Size(L, L), 0);
+    if (!image_L.empty())
+    {
+        is_background = true;
+    }
+    else
+    {
+        is_signal = false;
+    }
 }
 
 void Detector::calculate_signal(int d)
 {
     cv::GaussianBlur(image_main, image_d, cv::Size(d, d), 0);
+
+    if (!image_L.empty())
+    {
+        is_signal = true;
+    }
+    else
+    {
+        is_signal = false;
+    }
 }
 
 void Detector::calculate_significance(double sigma)
@@ -207,7 +233,17 @@ void Detector::cluster()
     // use DBSCAN to cluster the significant pixels
     DBSCAN scanner{image_main.rows * image_main.cols};
 
-    clusters = scanner.getClusters(image_clustered, image_clustered);
+    if (!image_clustered.empty())
+    {
+        clusters = scanner.getClusters(image_clustered, image_clustered);
+    }
+    else
+    {
+        clusters = scanner.getClusters(image_main, image_clustered);
+    }
+    std::cout << this->clusters.size() << std::endl;
+
+    cv::imwrite("test.jpg", image_clustered);
 }
 
 } // namespace rrec
