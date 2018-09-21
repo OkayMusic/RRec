@@ -211,9 +211,9 @@ std::vector<Cluster> DBSCAN::do_dbscan(std::vector<std::vector<bool>> &thresh,
     return clusters;
 }
 
-DBSCAN::DBSCAN(int numpixels) : clusterPoints{numpixels},
-                                perimPoints{numpixels},
-                                corePoints{numpixels}
+DBSCAN::DBSCAN(int numpixels) : clusterPoints(numpixels),
+                                perimPoints(numpixels),
+                                corePoints(numpixels)
 {
 }
 
@@ -227,6 +227,12 @@ std::vector<Cluster> DBSCAN::getClusters(cv::Mat threshold, cv::Mat outImage)
     size_t rows = threshold.rows;
     size_t cols = threshold.cols;
 
+    // make sure outImage is the correct size
+    if ((outImage.rows != threshold.rows) || (outImage.cols != threshold.cols))
+    {
+        outImage.create(rows, cols, CV_8UC1);
+    }
+
     std::vector<std::vector<bool>> thresh{rows, std::vector<bool>(cols)};
     std::vector<std::vector<int>>
         pointFlags{rows, std::vector<int>(cols, unlabelled)};
@@ -238,7 +244,7 @@ std::vector<Cluster> DBSCAN::getClusters(cv::Mat threshold, cv::Mat outImage)
         thresholdPointer = threshold.ptr<unsigned char>(i);
         for (int j = 0; j < cols; ++j)
         {
-            if (thresholdPointer[j] == 0)
+            if (thresholdPointer[j] < 128)
                 thresh[i][j] = false;
             else
                 thresh[i][j] = true;
