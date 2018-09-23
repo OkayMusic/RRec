@@ -1,6 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
 #include <vector>
+#include <string>
 
 #include "detector.hpp"
 
@@ -25,20 +28,31 @@ class Server
         cluster
     };
 
+    enum image_type
+    {
+        image_main,
+        image_clustered,
+        image_L,
+        image_d
+    };
+
   public:
     Server();
+    Server(std::string path);
+    Server(std::string path, int rows, int cols);
 
     // all of the handlers implemented by the server
-    void handle_BadInput();
+    void handle_BadInput(std::string err_msg);
     void handle_ImageRequest();
-    void handle_LoadFromFile();
+    void handle_LoadFromFile(std::string path);
+    void handle_LoadFromFile(std::string path, int rows, int cols);
     void handle_LoadFromPython();
-    void handle_RunAlgorithm();
     void handle_Equalize();
-    void handle_CalculateBackground();
-    void handle_CalculateSignal();
-    void handle_CalculateSignificance();
+    void handle_CalculateBackground(int L);
+    void handle_CalculateSignal(int d);
+    void handle_CalculateSignificance(double sigma);
     void handle_Cluster();
+    void handle_FourierPrep(); // writes in smtest file format
 
     // listens to stdin and calls an appropriate handler depending on input
     void listen_to_python();

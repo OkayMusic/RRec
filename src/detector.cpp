@@ -3,6 +3,11 @@
 namespace rrec
 {
 
+cv::Mat Detector::get_image_main() { return image_main; }
+cv::Mat Detector::get_image_L() { return image_L; }
+cv::Mat Detector::get_image_d() { return image_d; }
+cv::Mat Detector::get_image_clustered() { return image_clustered; }
+
 void Detector::err_not_open()
 {
     std::cout << "Error: couldn't open file" << std::endl;

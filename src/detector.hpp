@@ -31,6 +31,11 @@ class Detector
     bool is_clustered;  // true if calculate_significance has been called
     void err_not_open();
 
+    cv::Mat get_image_main();
+    cv::Mat get_image_L();
+    cv::Mat get_image_d();
+    cv::Mat get_image_clustered();
+
     void load_vector(std::vector<char> image); // not implemented
     void load_image(std::string path);
     void load_image();
