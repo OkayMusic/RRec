@@ -2,3 +2,5 @@ build/*
 bin/*
 video/*
 .vscode/*
+*.pyc
+src/*.pyc
