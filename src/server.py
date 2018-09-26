@@ -86,8 +86,10 @@ class Server(object):
         # finally, the array is sent off to the C++ end in one shot
         self.request(array.tobytes())
 
-        print self.readline()
-        print self.readline()
+        response = self.read(4)
+        if response != Server.success:
+            print "(PYTHON): Error in load_array"
+            print struct.unpack('i', response)[0]
 
     def load_file(self, path, dimensions=None):
         """
@@ -103,7 +105,7 @@ class Server(object):
             print "(PYTHON): An error occurred"
             print struct.unpack('i', response)[0]
 
-    def image_request(self):
+    def image_request(self, num_rows, num_cols):
         """
         Grabs the main image from the C++ end, and returns the corresponding 
         numpy array.
@@ -117,8 +119,9 @@ class Server(object):
             print struct.unpack('i', response)[0]
             return
 
-        return np.reshape(np.array(np.fromstring(self.read(1296*1728),
-                                                 dtype=np.uint8)), (1296, 1728),
+        return np.reshape(np.array(np.fromstring(self.read(num_rows*num_cols),
+                                                 dtype=np.uint8)),
+                          (num_rows, num_cols),
                           order='C')
 
     def _send_instruction(self, instruction):

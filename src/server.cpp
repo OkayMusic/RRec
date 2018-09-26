@@ -134,11 +134,9 @@ void Server::handle_ImageRequest()
     }
     else
     {
-        int temp = static_cast<int>(response_type::success);
-        fwrite(&temp, 4, 1, stdout);
-        fflush(stdout);
+        handle_Success();
 
-        cv::Mat image(detector.get_image_clustered());
+        cv::Mat image(detector.get_image_main());
 
         // write the data in one shot
         fwrite(image.data, 1, image.rows * image.cols, stdout);
@@ -149,6 +147,13 @@ void Server::handle_ImageRequest()
 void Server::handle_NotImplemented()
 {
     int temp = static_cast<int>(response_type::not_implemented);
+    fwrite(&temp, 4, 1, stdout);
+    fflush(stdout);
+}
+
+void Server::handle_Success()
+{
+    int temp = static_cast<int>(response_type::success);
     fwrite(&temp, 4, 1, stdout);
     fflush(stdout);
 }
@@ -184,15 +189,28 @@ void Server::listen_to_python(int mode)
                 handle_LoadFromFile(path);
 
                 // if execution reached here, return success
-                int temp = static_cast<int>(response_type::success);
-                fwrite(&temp, 4, 1, stdout);
-                fflush(stdout);
+                handle_Success();
                 break;
             }
             case loadFromPython:
             {
-                // NOT IMPLEMENTED
-                handle_NotImplemented();
+                // first we need to grab n_rows and n_cols from stdin
+                int n_rows, n_cols;
+                fread(&n_rows, sizeof(int), 1, stdin);
+                fread(&n_cols, sizeof(int), 1, stdin);
+
+                // make a cv::Mat to store the data in
+                cv::Mat temporary_image;
+                temporary_image.create(n_rows, n_cols, CV_32FC1);
+
+                // now we know how much data to read, read in the image
+                fread(temporary_image.data, 1, n_rows * n_cols, stdin);
+
+                // set temporary_image to be image_main
+                detector.set_image_main(temporary_image);
+                detector.is_open = true;
+
+                handle_Success();
                 break;
             }
             case runAlgorithm:
@@ -206,9 +224,7 @@ void Server::listen_to_python(int mode)
                 handle_Equalize();
 
                 // if execution reached here, return success
-                int temp = static_cast<int>(response_type::success);
-                fwrite(&temp, 4, 1, stdout);
-                fflush(stdout);
+                handle_Success();
                 break;
             }
             case calculateBackground:
@@ -219,9 +235,7 @@ void Server::listen_to_python(int mode)
                 handle_CalculateBackground(L);
 
                 // if execution reached here, return success
-                int temp = static_cast<int>(response_type::success);
-                fwrite(&temp, 4, 1, stdout);
-                fflush(stdout);
+                handle_Success();
                 break;
             }
             case calculateSignal:
@@ -235,9 +249,7 @@ void Server::listen_to_python(int mode)
 
                 handle_CalculateSignal(d);
                 // if execution reached here, return success
-                int temp = static_cast<int>(response_type::success);
-                fwrite(&temp, 4, 1, stdout);
-                fflush(stdout);
+                handle_Success();
                 break;
             }
             case calculateSignificance:
@@ -248,9 +260,7 @@ void Server::listen_to_python(int mode)
                 handle_CalculateSignificance(sigma);
 
                 // if execution reached here, return success
-                int temp = static_cast<int>(response_type::success);
-                fwrite(&temp, 4, 1, stdout);
-                fflush(stdout);
+                handle_Success();
                 break;
             }
             case cluster:
@@ -258,9 +268,7 @@ void Server::listen_to_python(int mode)
                 handle_Cluster();
 
                 // if execution reached here, return success
-                int temp = static_cast<int>(response_type::success);
-                fwrite(&temp, 4, 1, stdout);
-                fflush(stdout);
+                handle_Success();
                 break;
             }
 

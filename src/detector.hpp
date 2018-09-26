@@ -35,6 +35,7 @@ class Detector
     cv::Mat get_image_L();
     cv::Mat get_image_d();
     cv::Mat get_image_clustered();
+    void set_image_main(cv::Mat image);
 
     void load_vector(std::vector<char> image); // not implemented
     void load_image(std::string path);

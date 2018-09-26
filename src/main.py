@@ -11,3 +11,8 @@ if __name__ == "__main__":
     test_array = np.array(([0, 0, 0], [0, 50, 255]), dtype=np.uint8)
 
     recognizer.main_image = test_array
+
+    img = recognizer.image_request(2, 3)
+
+    cv2.imshow("image", img)
+    cv2.waitKey()

@@ -67,6 +67,7 @@ class Server
     void handle_Cluster();
     void handle_FourierPrep();    // writes in smtest file format
     void handle_NotImplemented(); // called in place of NI methods
+    void handle_Success();        // called after success
 
     // listens to stdin and calls an appropriate handler depending on input
     void listen_to_python(int mode);
