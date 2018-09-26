@@ -67,8 +67,27 @@ class Server(object):
         """
         Loads a numpy array into the C++ code's main image.
         """
+        assert type(array) == np.ndarray, \
+            "args to load_array must be numpy ndarrays"
+        assert array.dtype == np.uint8, \
+            "args to load_array must have dtype uint8"
+        assert len(array.shape) == 2, \
+            "args to load_array must be 2D numpy arrays"
+
         self._send_instruction(Server.loadFromPython)
-        self.request(array)
+
+        # next the C++ end needs to know the size of the array to expect
+        n_rows, n_cols = array.shape
+
+        # the rows and cols are sent as binary integers
+        self.request(struct.pack('i', n_rows))
+        self.request(struct.pack('i', n_cols))
+
+        # finally, the array is sent off to the C++ end in one shot
+        self.request(array.tobytes())
+
+        print self.readline()
+        print self.readline()
 
     def load_file(self, path, dimensions=None):
         """
