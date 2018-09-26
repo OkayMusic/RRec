@@ -3,13 +3,17 @@ import subprocess
 import atexit
 
 import numpy as np
-import pipe
 
 
 class Server(object):
     # commonly used strings go here
     local = "local"
     online = "online"
+
+    # define integers used as responses from the C++ end
+    success = struct.pack('i', 0)
+    notImplemented = struct.pack('i', 1)
+    error = struct.pack('i', 2)
 
     # define integers used as flags for the C++ end
     imageRequest = struct.pack('i', 0)
@@ -63,21 +67,33 @@ class Server(object):
         """
         Loads a numpy array into the C++ code's main image.
         """
-        pass
+        self._send_instruction(Server.loadFromPython)
+        self.request(array)
 
-    def load_file(self, path):
+    def load_file(self, path, dimensions=None):
         """
         Loads an image stored in a file into the C++ code's main image. This 
         method can handle .pic files, as well as all standard image formats.
         """
-        pass
+        self._send_instruction(Server.loadFromFile)
+        self.request(str(path) + '\n')
+
+        response = self.read(4)
+        if response != Server.success:
+            print self.readline()
+            print "(PYTHON): An error occurred"
+            print struct.unpack('i', response)[0]
 
     def image_request(self):
         """
         Grabs the main image from the C++ end, and returns the corresponding 
         numpy array.
         """
-        pass
+        # send the image request instruction
+        self._send_instruction(Server.imageRequest)
+        return np.reshape(np.array(np.fromstring(self.read(1296*1728),
+                                                 dtype=np.uint8)), (1296, 1728),
+                          order='C')
 
     def _send_instruction(self, instruction):
         """
@@ -85,6 +101,6 @@ class Server(object):
         """
         # make sure the instruction is 4 bytes long
         if len(instruction) != 4:
-            print "_send_instruction error: do not call this method manually"
-            return
+            raise ValueError(
+                "Incorrect instruction length, do not call the _send_instruction method manually")
         self.request(instruction)

@@ -16,11 +16,16 @@ void Detector::err_not_open()
 void Detector::load_image()
 {
     // load image at path this.path into image_main
-    image_main = cv::imread(path);
+    this->image_main = cv::imread(path);
+    cv::cvtColor(this->image_main, this->image_main, CV_BGR2GRAY);
 
     if (image_main.empty())
     {
         is_open = false;
+        int temp = 2;
+        fwrite(&temp, 4, 1, stdout);
+        fflush(stdout);
+        std::cout << "image_main empty after call to imread" << std::endl;
     }
     else
     {
@@ -31,7 +36,8 @@ void Detector::load_image()
 void Detector::load_image(std::string path)
 {
     // load image at path this.path into image_main
-    path = path;
+
+    this->path = path;
     load_image();
 }
 

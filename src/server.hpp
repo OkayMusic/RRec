@@ -28,12 +28,25 @@ class Server
         cluster
     };
 
+    enum class response_type
+    {
+        success,         // returned on success, the default response type
+        not_implemented, // returned on call to not implemented method
+        error            // other undefined error
+    };
+
     enum image_type
     {
         image_main,
         image_clustered,
         image_L,
         image_d
+    };
+
+    enum class server_type
+    {
+        online,
+        offline
     };
 
   public:
@@ -52,9 +65,10 @@ class Server
     void handle_CalculateSignal(int d);
     void handle_CalculateSignificance(double sigma);
     void handle_Cluster();
-    void handle_FourierPrep(); // writes in smtest file format
+    void handle_FourierPrep();    // writes in smtest file format
+    void handle_NotImplemented(); // called in place of NI methods
 
     // listens to stdin and calls an appropriate handler depending on input
-    void listen_to_python();
+    void listen_to_python(int mode);
 };
 } // namespace rrec

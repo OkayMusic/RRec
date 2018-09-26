@@ -40,8 +40,8 @@ include_directories(${X11_INCLUDE_DIR}
                     ${PYTHON_INCLUDE_DIRS}
                     )
 
-add_executable(a.out ${SRC_FILES})
+add_executable(b.out ${SRC_FILES})
 
-target_link_libraries(a.out m boost_python python2.7 ${OpenCV_LIBS} ${X11_LIBRARIES} ${Boost_LIBRARIES}
+target_link_libraries(b.out m boost_python python2.7 ${OpenCV_LIBS} ${X11_LIBRARIES} ${Boost_LIBRARIES}
     ${PYTHON_LIBRARIES}
     )

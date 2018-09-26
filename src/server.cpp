@@ -23,7 +23,10 @@ Server::Server(std::string path, int rows, int cols)
 
 void Server::handle_BadInput(std::string err_msg)
 {
-    // NOT IMPLEMENTED
+    // send an error response
+    int temp = static_cast<int>(response_type::error);
+    fwrite(&temp, 4, 1, stdout);
+    fflush(stdout);
     std::cout << err_msg << std::endl;
 }
 
@@ -132,12 +135,135 @@ void Server::handle_ImageRequest()
     else
     {
         cv::Mat image_main(detector.get_image_main());
-        for (int i = 0; i < image_main.cols; ++i)
+        // write the data in one shot
+        fwrite(image_main.data, 1, image_main.rows * image_main.cols, stdout);
+    }
+}
+
+void Server::handle_NotImplemented()
+{
+    int temp = static_cast<int>(response_type::not_implemented);
+    fwrite(&temp, 4, 1, stdout);
+}
+
+void Server::listen_to_python(int mode)
+{
+    if (mode == static_cast<int>(server_type::offline))
+    {
+        while (1 < 2)
         {
-            fwrite(image_main.data + i * image_main.rows, 1,
-                   image_main.rows, stdout);
-            std::cout << std::endl;
+            int instruction;
+            fread(&instruction, 4, 1, stdin);
+
+            // int temp = static_cast<int>()
+
+            // if there are any arguments which we need to grab from the python end,
+            // grab them here and then pass them to the appropriate handler.
+            // if we don't need to grab any args from stdin, then just call the
+            // relevant handler right away.
+            switch (instruction)
+            {
+            case imageRequest:
+            {
+                handle_ImageRequest();
+                break;
+            }
+            case loadFromFile:
+            {
+                // grab the path to the file from stdin
+                std::string path;
+                std::getline(std::cin, path);
+
+                handle_LoadFromFile(path);
+
+                // if execution reached here, return success
+                int temp = static_cast<int>(response_type::success);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
+            case loadFromPython:
+            {
+                // NOT IMPLEMENTED
+                handle_NotImplemented();
+                break;
+            }
+            case runAlgorithm:
+            { // NOT IMPLEMENTED
+                handle_NotImplemented();
+                break;
+            }
+            case equalize:
+            {
+                // simply call the equalize method, more error checks needed
+                handle_Equalize();
+
+                // if execution reached here, return success
+                int temp = static_cast<int>(response_type::success);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
+            case calculateBackground:
+            {
+                // grab L parameter
+                int L;
+                std::cin >> L;
+                handle_CalculateBackground(L);
+
+                // if execution reached here, return success
+                int temp = static_cast<int>(response_type::success);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
+            case calculateSignal:
+            {
+                int d;
+                std::cin >> d;
+                handle_CalculateSignal(d);
+
+                // if execution reached here, return success
+                int temp = static_cast<int>(response_type::success);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
+            case calculateSignificance:
+            {
+                double sigma;
+                std::cin >> sigma;
+                handle_CalculateSignificance(sigma);
+
+                // if execution reached here, return success
+                int temp = static_cast<int>(response_type::success);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
+            case cluster:
+            {
+                handle_Cluster();
+
+                // if execution reached here, return success
+                int temp = static_cast<int>(response_type::success);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
+
+            default:
+                // if execution reaches here, request isn't implemented
+                int temp = static_cast<int>(response_type::not_implemented);
+                fwrite(&temp, 4, 1, stdout);
+                fflush(stdout);
+                break;
+            }
         }
+    }
+    else
+    {
+        handle_NotImplemented();
     }
 }
 

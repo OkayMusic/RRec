@@ -1,5 +1,7 @@
 import server
+import struct
 import numpy as np
+from time import sleep
 
 
 class Detector(server.Server):
@@ -20,21 +22,45 @@ class Detector(server.Server):
         elif type(value) == np.ndarray:
             self.load_array(value)
         else:
-            print "Attempting to set main_image to be an invalid type."
-            print "Valid types are: np.ndarray, str."
-            print "If type is a string, it should be a path to an image."
+            raise TypeError(
+                "main_image must be set to a string or a numpy array")
 
     def equalize(self):
         self._send_instruction(server.Server.equalize)
+        if self.read(4) != server.Server.success:
+            print "(PYTHON): Error in equalize"
+            print self.readline()
 
-    def calculate_background(self):
-        self._send_instruction(server.Server.calculateBackground)
+    def calculate_background(self, brightness_variance):
+        if type(brightness_variance) != int:
+            raise TypeError("Arg to calculate_background must be an integer")
+        else:
+            self._send_instruction(server.Server.calculateBackground)
+            self.request(struct.pack('i', brightness_variance))
 
-    def calculate_signal(self):
-        self._send_instruction(server.Server.calculateSignal)
+            if self.read(4) != server.Server.success:
+                print "(PYTHON): Error in calculate_background"
+                print self.readline()
 
-    def calculate_significance(self):
-        self._send_instruction(server.Server.calculateSignificance)
+    def calculate_signal(self, signal_size):
+        if type(signal_size) != int:
+            raise TypeError("Arg to calculate_background must be an integer")
+        else:
+            self._send_instruction(server.Server.calculateSignal)
+            self.request(struct.pack('i', signal_size))
+            if self.read(4) != server.Server.success:
+                print "(PYTHON): Error in calculate_signal"
+                print self.readline()
+
+    def calculate_significance(self, sigma):
+        if type(sigma) != float and type(sigma) != int:
+            raise TypeError(
+                "Arg to calculate_background must be an int or a float")
+        else:
+            self._send_instruction(server.Server.calculateSignificance)
+            self.request(struct.pack('d', sigma))
+            print self.read(4)
 
     def cluster(self):
         self._send_instruction(server.Server.cluster)
+        print self.read(4)
