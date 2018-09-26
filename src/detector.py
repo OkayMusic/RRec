@@ -48,9 +48,13 @@ class Detector(server.Server):
         else:
             self._send_instruction(server.Server.calculateSignal)
             self.request(struct.pack('i', signal_size))
-            if self.read(4) != server.Server.success:
+
+            response = self.read(4)
+            if response != server.Server.success:
                 print "(PYTHON): Error in calculate_signal"
-                print self.readline()
+                print "Response:", struct.unpack('i', response)[0]
+
+                print "Instruction received, ", self.readline()
 
     def calculate_significance(self, sigma):
         if type(sigma) != float and type(sigma) != int:
@@ -59,8 +63,18 @@ class Detector(server.Server):
         else:
             self._send_instruction(server.Server.calculateSignificance)
             self.request(struct.pack('d', sigma))
-            print self.read(4)
+            response = self.read(4)
+            if response != server.Server.success:
+                print "(PYTHON): Error in calculate_significance"
+                print "Response:", struct.unpack('i', response)[0]
+
+                print "Instruction received, ", self.readline()
 
     def cluster(self):
         self._send_instruction(server.Server.cluster)
-        print self.read(4)
+
+        response = self.read(4)
+        if response != server.Server.success:
+            print "(PYTHON): Error in cluster"
+            print "Response:", struct.unpack('i', response)[0]
+            print "Instruction received, ", self.readline()

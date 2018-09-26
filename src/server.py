@@ -91,6 +91,13 @@ class Server(object):
         """
         # send the image request instruction
         self._send_instruction(Server.imageRequest)
+        response = self.read(4)
+        if response != Server.success:
+            # print self.readline()
+            print "(PYTHON): An error occurred"
+            print struct.unpack('i', response)[0]
+            return
+
         return np.reshape(np.array(np.fromstring(self.read(1296*1728),
                                                  dtype=np.uint8)), (1296, 1728),
                           order='C')

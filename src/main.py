@@ -16,12 +16,15 @@ if __name__ == "__main__":
 
     recognizer.calculate_background(51)
     print "(PYTHON): ", 3
+
     recognizer.calculate_signal(3)
     print "(PYTHON): ", 4
     recognizer.calculate_significance(1)
     print "(PYTHON): ", 5
-    recognizer.cluster()
-    print "(PYTHON): ", 6
+
     test_image = recognizer.image_request()
     cv2.imshow("image", test_image)
     cv2.waitKey()
+
+    # recognizer.cluster()
+    # print "(PYTHON): ", 6

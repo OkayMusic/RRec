@@ -149,28 +149,28 @@ void Detector::equalize()
 
 void Detector::calculate_background(int L)
 {
-    cv::GaussianBlur(image_main, image_L, cv::Size(L, L), 0);
+    cv::GaussianBlur(image_main, this->image_L, cv::Size(L, L), 0);
     if (!image_L.empty())
     {
-        is_background = true;
+        this->is_background = true;
     }
     else
     {
-        is_signal = false;
+        this->is_background = false;
     }
 }
 
 void Detector::calculate_signal(int d)
 {
-    cv::GaussianBlur(image_main, image_d, cv::Size(d, d), 0);
+    cv::GaussianBlur(image_main, this->image_d, cv::Size(d, d), 0);
 
     if (!image_L.empty())
     {
-        is_signal = true;
+        this->is_signal = true;
     }
     else
     {
-        is_signal = false;
+        this->is_signal = false;
     }
 }
 
@@ -246,11 +246,11 @@ void Detector::cluster()
 
     if (!image_clustered.empty())
     {
-        clusters = scanner.getClusters(image_clustered, image_clustered);
+        this->clusters = scanner.getClusters(image_clustered, image_clustered);
     }
     else
     {
-        clusters = scanner.getClusters(image_main, image_clustered);
+        this->clusters = scanner.getClusters(image_main, image_clustered);
     }
     std::cout << this->clusters.size() << std::endl;
 

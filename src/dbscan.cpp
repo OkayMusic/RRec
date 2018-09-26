@@ -52,7 +52,6 @@ void DBSCAN::getNeighbours(std::vector<std::vector<bool>> &thresh,
     }
     if (thresh[i][j + 1])
     {
-
         neighbours[3][0] = i;
         neighbours[3][1] = j + 1;
     }

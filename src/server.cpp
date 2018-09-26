@@ -134,9 +134,15 @@ void Server::handle_ImageRequest()
     }
     else
     {
-        cv::Mat image_main(detector.get_image_main());
+        int temp = static_cast<int>(response_type::success);
+        fwrite(&temp, 4, 1, stdout);
+        fflush(stdout);
+
+        cv::Mat image(detector.get_image_main());
+
         // write the data in one shot
-        fwrite(image_main.data, 1, image_main.rows * image_main.cols, stdout);
+        fwrite(image.data, 1, image.rows * image.cols, stdout);
+        fflush(stdout);
     }
 }
 
@@ -144,6 +150,7 @@ void Server::handle_NotImplemented()
 {
     int temp = static_cast<int>(response_type::not_implemented);
     fwrite(&temp, 4, 1, stdout);
+    fflush(stdout);
 }
 
 void Server::listen_to_python(int mode)
@@ -152,7 +159,7 @@ void Server::listen_to_python(int mode)
     {
         while (1 < 2)
         {
-            int instruction;
+            unsigned int instruction;
             fread(&instruction, 4, 1, stdin);
 
             // int temp = static_cast<int>()
@@ -208,7 +215,7 @@ void Server::listen_to_python(int mode)
             {
                 // grab L parameter
                 int L;
-                std::cin >> L;
+                fread(&L, 4, 1, stdin);
                 handle_CalculateBackground(L);
 
                 // if execution reached here, return success
@@ -219,10 +226,14 @@ void Server::listen_to_python(int mode)
             }
             case calculateSignal:
             {
+                // int temp = static_cast<int>(response_type::error);
+                // fwrite(&temp, 4, 1, stdout);
+                // std::cout << "testing" << std::endl;
+                // fflush(stdout);
                 int d;
-                std::cin >> d;
-                handle_CalculateSignal(d);
+                fread(&d, 4, 1, stdin);
 
+                handle_CalculateSignal(d);
                 // if execution reached here, return success
                 int temp = static_cast<int>(response_type::success);
                 fwrite(&temp, 4, 1, stdout);
@@ -257,6 +268,7 @@ void Server::listen_to_python(int mode)
                 int temp = static_cast<int>(response_type::not_implemented);
                 fwrite(&temp, 4, 1, stdout);
                 fflush(stdout);
+                std::cout << instruction << std::endl;
                 break;
             }
         }
