@@ -94,7 +94,7 @@ class Server(object):
         response = self.read(4)
         if response != Server.success:
             # print self.readline()
-            print "(PYTHON): An error occurred"
+            print "(PYTHON): An error occurred in image_request"
             print struct.unpack('i', response)[0]
             return
 

@@ -176,6 +176,7 @@ void Detector::calculate_signal(int d)
 
 void Detector::calculate_significance(double sigma)
 {
+
     int rows = image_main.rows;
     int cols = image_main.cols;
 
@@ -246,15 +247,14 @@ void Detector::cluster()
 
     if (!image_clustered.empty())
     {
-        this->clusters = scanner.getClusters(image_clustered, image_clustered);
+        this->clusters = scanner.getClusters(this->image_clustered,
+                                             this->image_clustered);
     }
     else
     {
-        this->clusters = scanner.getClusters(image_main, image_clustered);
+        this->clusters = scanner.getClusters(this->image_main,
+                                             this->image_clustered);
     }
-    std::cout << this->clusters.size() << std::endl;
-
-    cv::imwrite("test.jpg", image_clustered);
 }
 
 } // namespace rrec

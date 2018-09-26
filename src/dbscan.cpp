@@ -227,10 +227,7 @@ std::vector<Cluster> DBSCAN::getClusters(cv::Mat threshold, cv::Mat outImage)
     size_t cols = threshold.cols;
 
     // make sure outImage is the correct size
-    if ((outImage.rows != threshold.rows) || (outImage.cols != threshold.cols))
-    {
-        outImage.create(rows, cols, CV_8UC1);
-    }
+    outImage.create(rows, cols, CV_8UC1);
 
     std::vector<std::vector<bool>> thresh{rows, std::vector<bool>(cols)};
     std::vector<std::vector<int>>

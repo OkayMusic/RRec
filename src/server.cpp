@@ -138,7 +138,7 @@ void Server::handle_ImageRequest()
         fwrite(&temp, 4, 1, stdout);
         fflush(stdout);
 
-        cv::Mat image(detector.get_image_main());
+        cv::Mat image(detector.get_image_clustered());
 
         // write the data in one shot
         fwrite(image.data, 1, image.rows * image.cols, stdout);
@@ -243,7 +243,8 @@ void Server::listen_to_python(int mode)
             case calculateSignificance:
             {
                 double sigma;
-                std::cin >> sigma;
+
+                fread(&sigma, sizeof(double), 1, stdin);
                 handle_CalculateSignificance(sigma);
 
                 // if execution reached here, return success
