@@ -24,6 +24,8 @@ class Detector
 
     float pic_cutoff; // .pic max threshold, defaults to 900 (see constructors)
 
+    char pixel_from_intensity(std::vector<int> intensity, int num_pixels);
+
   public:
     bool is_open;       // true if image was loaded properly into RAM
     bool is_background; // true if calculate_background has been called properly
@@ -49,14 +51,21 @@ class Detector
     Detector(std::string path);
     Detector();
 
-    void equalize();
+    void equalize(); // calls an ordinary histogram equalization routine
 
+    // an adaptive histogram equalization algorithm
+    void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img);
+
+    // creates image_L, which is an image representing weighted mean pixel vals
     void calculate_background(int L);
 
+    // creates image_d, which is an image representing signal at each pixel
     void calculate_signal(int d);
 
+    // creates image_clustered, which for now is a thresholded image
     void calculate_significance(double sigma);
 
+    // clusters image_clustered if available, else it clusters image_main
     void cluster();
 };
 } // namespace rrec

@@ -9,6 +9,11 @@ cv::Mat Detector::get_image_d() { return image_d; }
 cv::Mat Detector::get_image_clustered() { return image_clustered; }
 void Detector::set_image_main(cv::Mat img) { img.copyTo(this->image_main); }
 
+char Detector::pixel_from_intensity(std::vector<int> intensity, int num_pixels)
+{
+    // given an intensity vector and number of local pixels
+}
+
 void Detector::err_not_open()
 {
     std::cout << "Error: couldn't open file" << std::endl;
@@ -146,6 +151,111 @@ Detector::Detector() : pic_cutoff{900} {} // only init pic cutoff value
 void Detector::equalize()
 {
     cv::equalizeHist(image_main, image_main);
+}
+
+void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img, int length)
+{
+    // first make sure that the outgoing image has the correct shape/type
+    int rows = in_img.rows;
+    int cols = in_img.cols;
+    out_img.create(rows, cols, CV_8UC1);
+
+    // grab some pointy bois
+    unsigned char *in_pointer;
+    unsigned char *out_pointer;
+
+    // loop over all the pixels in the out_img
+    for (int i = 0; i < rows; ++i)
+    {
+        out_pointer = out_img.ptr<unsigned char>(i);
+
+        // create an empty std::vector to store pixel intensities
+        std::vector<int> intensities(256, 0);
+
+        // work out which rows in in_img are close to our row in out_img
+        int row_beg = i - static_cast<int>(length / 2);
+        int row_end = i + static_cast<int>(length / 2);
+        // make sure there are no index-related segfaults!!
+        if (row_beg < 0)
+            row_beg = 0;
+        if (row_end > rows - 1)
+            row_end = rows - 1;
+
+        // populate the intensities vector for the rectangular sub-image on the
+        // new row (knowing we're necessarily at column 0)
+        for (int a = row_beg; a <= row_end; ++a)
+        {
+            // get the pointer to this row in in_img
+            in_pointer = in_img.ptr<unsigned char>(i);
+
+            // this next loop is over cols near to column 0
+            for (int b = 0; b <= length / 2; ++b)
+            {
+                // incrament element of intensities corresponding to pixel value
+                ++(intensities[static_cast<int>(in_pointer[b])]);
+            }
+        }
+
+        // now work out what the pixel at (i, 0) should be in out_image
+        // first calculate the number of pixels used to work out intensity
+        int num_pixels = (length / 2 + 1) * (row_beg - row_end + 1);
+
+        // get the intensity of pixel (i, j) in in_img
+        char init_intensity = in_img.ptr<unsigned char>(i)[0];
+
+        // sum all pixels with intensity < init_intensity
+        int sum{0};
+        for (int temp = 0; temp < static_cast<int>(init_intensity); ++temp)
+        {
+            sum += intensities[temp];
+        }
+
+        // finally, to convert to proper units, divide by num_pixels
+        out_pointer[0] = sum / num_pixels;
+
+        // now move on to rows which aren't the 0th row!
+        bool last_col = false;         // check if we've done the last column
+        for (int j = 1; j < cols; ++j) // j = 1(!!) as we already did column 0
+        {
+            // now work out which cols are 'near' to the j'th col
+            int col_beg = j - static_cast<int>(length / 2);
+            int col_end = j + static_cast<int>(length / 2);
+
+            // bounds checking
+            if (col_beg < 0)
+                col_beg = 0;
+            if (col_end > cols - 1)
+                col_end = cols - 1;
+
+            // if col_beg is still 0, dont subtract off intensities in col_beg-1
+            if (col_beg != 0)
+            {
+                for (int a = row_beg; a <= row_end; ++a)
+                {
+                    in_pointer = in_img.ptr<unsigned char>(a);
+                    // decrament element of intensities as this col is now
+                    // "far away" from out current col
+                    --(intensities[static_cast<int>(in_pointer[col_beg - 1])]);
+                }
+            }
+            // if we've already done the last column, dont do it again
+            if (!last_col)
+            {
+                // if we're doing the last col now, set last_col=true
+                if (col_end == cols - 1)
+                {
+                    last_col = true;
+                }
+
+                for (int a = row_beg; a <= row_end; ++a)
+                {
+                    in_pointer = in_img.ptr<unsigned char>(a);
+                    // this column is now "close" to our pixel in out_img
+                    ++(intensities[static_cast<int>(in_pointer[col_end])]);
+                }
+            }
+        }
+    }
 }
 
 void Detector::calculate_background(int L)
