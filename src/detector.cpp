@@ -153,8 +153,10 @@ void Detector::equalize()
     cv::equalizeHist(image_main, image_main);
 }
 
-void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img, int length)
+void Detector::adaptive_hist_eq(int length)
 {
+    cv::Mat in_img = this->image_main;
+    cv::Mat out_img;
     // first make sure that the outgoing image has the correct shape/type
     int rows = in_img.rows;
     int cols = in_img.cols;
@@ -198,7 +200,7 @@ void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img, int length)
 
         // now work out what the pixel at (i, 0) should be in out_image
         // first calculate the number of pixels used to work out intensity
-        int num_pixels = (length / 2 + 1) * (row_beg - row_end + 1);
+        int num_pixels = (length / 2 + 1) * (row_end - row_beg + 1);
 
         // get the intensity of pixel (i, j) in in_img
         char init_intensity = in_img.ptr<unsigned char>(i)[0];
@@ -211,7 +213,7 @@ void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img, int length)
         }
 
         // finally, to convert to proper units, divide by num_pixels
-        out_pointer[0] = sum / num_pixels;
+        out_pointer[0] = 255 * sum / num_pixels;
 
         // now move on to rows which aren't the 0th row!
         bool last_col = false;         // check if we've done the last column
@@ -254,8 +256,26 @@ void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img, int length)
                     ++(intensities[static_cast<int>(in_pointer[col_end])]);
                 }
             }
+
+            // now work out what the pixel at (i, j) should be in out_image
+            // first calculate the number of pixels used to work out intensity
+            int num_pixels = (col_end - col_beg + 1) * (row_end - row_beg + 1);
+
+            // get the intensity of pixel (i, j) in in_img
+            char init_intensity = in_img.ptr<unsigned char>(i)[0];
+
+            // sum all pixels with intensity < init_intensity
+            int sum{0};
+            for (int temp = 0; temp < static_cast<int>(init_intensity); ++temp)
+            {
+                sum += intensities[temp];
+            }
+
+            // finally, to convert to proper units, divide by num_pixels
+            out_pointer[j] = 255 * sum / num_pixels;
         }
     }
+    out_img.copyTo(this->image_main);
 }
 
 void Detector::calculate_background(int L)

@@ -63,7 +63,7 @@ void Server::handle_Equalize()
 {
     if (detector.is_open)
     {
-        detector.equalize();
+        detector.adaptive_hist_eq(51);
     }
     else
     {

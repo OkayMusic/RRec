@@ -54,7 +54,7 @@ class Detector
     void equalize(); // calls an ordinary histogram equalization routine
 
     // an adaptive histogram equalization algorithm
-    void adaptive_hist_eq(cv::Mat in_img, cv::Mat out_img);
+    void adaptive_hist_eq(int length);
 
     // creates image_L, which is an image representing weighted mean pixel vals
     void calculate_background(int L);

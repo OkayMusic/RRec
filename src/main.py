@@ -8,11 +8,19 @@ if __name__ == "__main__":
 
     recognizer = detector.Detector(mode="local", binary=target_bin)
 
-    test_array = np.array(([0, 0, 0], [0, 50, 255]), dtype=np.uint8)
+    recognizer.main_image = "fr_0.jpg"
 
-    recognizer.main_image = test_array
+    recognizer.equalize()
 
-    img = recognizer.image_request(2, 3)
+    img = recognizer.image_request(1296, 1728)
+
+    # recognizer.readline()
+    # recognizer.readline()
+    # recognizer.readline()
+    # recognizer.readline()
+    # recognizer.readline()
+
+    cv2.imwrite("test.jpg", img)
 
     cv2.imshow("image", img)
     cv2.waitKey()
