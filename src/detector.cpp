@@ -200,7 +200,10 @@ void Detector::adaptive_hist_eq(int length)
 
         // now work out what the pixel at (i, 0) should be in out_image
         // first calculate the number of pixels used to work out intensity
-        int num_pixels = (length / 2 + 1) * (row_end - row_beg + 1);
+        // int num_pixels = (length / 2 + 1) * (row_end - row_beg + 1);
+        int num_pixels{0};
+        for (auto t : intensities)
+            num_pixels += t;
 
         // get the intensity of pixel (i, j) in in_img
         char init_intensity = in_img.ptr<unsigned char>(i)[0];
@@ -213,9 +216,9 @@ void Detector::adaptive_hist_eq(int length)
         }
 
         // finally, to convert to proper units, divide by num_pixels
-        out_pointer[0] = 255 * sum / num_pixels;
+        out_pointer[0] = (255 * sum) / num_pixels;
 
-        // now move on to rows which aren't the 0th row!
+        // now move on to cols which aren't the 0th col!
         bool last_col = false;         // check if we've done the last column
         for (int j = 1; j < cols; ++j) // j = 1(!!) as we already did column 0
         {
@@ -272,7 +275,7 @@ void Detector::adaptive_hist_eq(int length)
             }
 
             // finally, to convert to proper units, divide by num_pixels
-            out_pointer[j] = 255 * sum / num_pixels;
+            out_pointer[j] = (255 * sum) / num_pixels;
         }
     }
     out_img.copyTo(this->image_main);

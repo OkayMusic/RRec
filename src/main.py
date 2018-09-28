@@ -14,12 +14,6 @@ if __name__ == "__main__":
 
     img = recognizer.image_request(1296, 1728)
 
-    # recognizer.readline()
-    # recognizer.readline()
-    # recognizer.readline()
-    # recognizer.readline()
-    # recognizer.readline()
-
     cv2.imwrite("test.jpg", img)
 
     cv2.imshow("image", img)
