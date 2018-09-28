@@ -269,6 +269,9 @@ void Server::listen_to_python(int mode)
 
                 // if execution reached here, return success
                 handle_Success();
+
+                // now we should feed the python end the generated clusters
+                detector.print_clusters();
                 break;
             }
 

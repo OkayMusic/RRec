@@ -68,5 +68,6 @@ class Detector
 
     // clusters image_clustered if available, else it clusters image_main
     void cluster();
+    void print_clusters();
 };
 } // namespace rrec

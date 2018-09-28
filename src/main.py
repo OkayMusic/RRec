@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     recognizer.main_image = "fr_0.jpg"
 
-    recognizer.equalize()
+    recognizer.cluster()
 
     img = recognizer.image_request(1296, 1728)
 

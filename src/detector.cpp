@@ -391,4 +391,39 @@ void Detector::cluster()
     }
 }
 
+void Detector::print_clusters()
+{
+    // first tell the python end how much data to expect
+    int size = sizeof(Cluster) * clusters.size();
+    fwrite(&size, 4, 1, stdout);
+
+    // also tell python how many clusters there will be
+    int num_clusters = clusters.size();
+    fwrite(&num_clusters, 4, 1, stdout);
+
+    // now iterate over all the clusters
+    for (auto cluster : clusters)
+    {
+        // tell python the number of core points in this cluster
+        int num_core = cluster.corePoints.size();
+        fwrite(&num_core, 4, 1, stdout);
+
+        // and write all the core point coordinates
+        for (auto coords : cluster.corePoints)
+        {
+            fwrite(coords.data(), 8, 1, stdout);
+        }
+
+        // tell python how many outer points are in this cluster
+        int num_outer = cluster.outerPoints.size();
+        fwrite(&num_outer, 4, 1, stdout);
+
+        // write all of the outer point coordinates
+        for (auto coords : cluster.outerPoints)
+        {
+            fwrite(coords.data(), 8, 1, stdout);
+        }
+    }
+}
+
 } // namespace rrec
