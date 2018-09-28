@@ -96,15 +96,19 @@ class Detector(server.Server):
                 # grab the number of core points from the C++ end
                 num_core_points = struct.unpack('i', self.read(4))[0]
                 # now grab the core points themselves, saving as a numpy array
-                core_points = np.fromstring(self.read(num_core_points),
+                core_points = np.fromstring(self.read(2 * num_core_points),
                                             dtype=np.int32,
                                             count=num_core_points)
 
+                core_points = np.reshape(core_points, (num_core_points, 2))
+
                 # now grab the number of outer points from the C++ end
                 num_outer_points = struct.unpack('i', self.read(4))[0]
-                outer_points = np.fromstring(self.read(num_outer_points),
+                outer_points = np.fromstring(self.read(2 * num_outer_points),
                                              dtype=np.int32,
                                              count=num_outer_points)
+
+                outer_points = np.reshape(outer_points, (num_outer_points, 2))
 
                 # store these guys in a cluster, in clusters
                 clusters[i] = Cluster(core_points, outer_points)

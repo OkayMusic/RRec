@@ -423,6 +423,7 @@ void Detector::print_clusters()
         {
             fwrite(coords.data(), 8, 1, stdout);
         }
+        fflush(stdout);
     }
 }
 
